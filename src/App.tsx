@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import type { IScannerControls } from "@zxing/browser";
+import { DecodeHintType, BarcodeFormat } from "@zxing/library";
 import { supabase } from "./supabase";
 import type { Product } from "./types";
 import logoDuca from "./assets/logo-duca.png";
@@ -136,14 +137,37 @@ function App() {
 
   // ---- Cámara: escaneo continuo con la cámara trasera ----
   useEffect(() => {
-    const reader = new BrowserMultiFormatReader();
+    // Solo los formatos de códigos de barras reales de productos: hace el
+    // escaneo mucho más rápido y preciso (no pierde tiempo probando QR, etc.).
+    const hints = new Map();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39
+    ]);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+
+    const reader = new BrowserMultiFormatReader(hints);
     let controls: IScannerControls | null = null;
     let cancelled = false;
+
+    // Más resolución + enfoque continuo = lee códigos chicos y de lejos.
+    const constraints = {
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        advanced: [{ focusMode: "continuous" }]
+      }
+    } as unknown as MediaStreamConstraints;
 
     (async () => {
       try {
         controls = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: "environment" } } },
+          constraints,
           videoRef.current!,
           (res) => {
             if (res) handleCode(res.getText());
