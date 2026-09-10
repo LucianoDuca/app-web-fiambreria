@@ -1,0 +1,19 @@
+node_modules/
+dist/
+dist-ssr/
+dev-dist/
+*.local
+.env
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor / sistema
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
